@@ -59,7 +59,12 @@ type ConsoleWriter struct {
 	PartsOrder []string
 
 	// PartsExclude defines parts to not display in output.
+	// This does not affect the fields, please use FieldsExclude for them
 	PartsExclude []string
+
+	// PartsExclude defines fields to not display in output.
+	// This does not affect the parts, please use PartsExclude for them
+	FieldsExclude []string
 
 	FormatTimestamp     Formatter
 	FormatLevel         Formatter
@@ -124,11 +129,20 @@ func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 // writeFields appends formatted key-value pairs to buf.
 func (w ConsoleWriter) writeFields(evt map[string]interface{}, buf *bytes.Buffer) {
 	var fields = make([]string, 0, len(evt))
+
+out:
 	for field := range evt {
 		switch field {
 		case LevelFieldName, TimestampFieldName, MessageFieldName, CallerFieldName:
 			continue
 		}
+
+		for _, exclude := range w.FieldsExclude {
+			if exclude == field {
+				continue out
+			}
+		}
+
 		fields = append(fields, field)
 	}
 	sort.Strings(fields)
